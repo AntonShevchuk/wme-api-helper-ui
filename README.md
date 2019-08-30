@@ -2,9 +2,11 @@
 ## Require Script
 ```javascript
 // @require https://greasyfork.org/scripts/24851-wazewrap/code/WazeWrap.js
-// @require https://greasyfork.org/scripts/389117-wme-api-helper/code/APIHelperUI.js?version=XXX
+// @require https://greasyfork.org/scripts/389117-apihelper/code/APIHelper.js?version=729351
+// @require https://greasyfork.org/scripts/389577-apihelperui/code/APIHelperUI.js?version=729353
 ```
-> See last available version on the GreasyFork page https://greasyfork.org/uk/scripts/389117-wme-api-helper 
+> See last available version on the GreasyFork homepage
+
 ## Initialisation of the API Helper
 For initial helper use method `APIHelper.bootstrap()`:
 ```javascript
@@ -126,5 +128,5 @@ For initial helper use method `APIHelper.bootstrap()`:
 
 ## Links
 Author homepage: http://anton.shevchuk.name/  
-Script homepage: https://github.com/AntonShevchuk/wme-api-helper  
-GreasyFork: https://greasyfork.org/uk/scripts/389117-wme-api-helper
+Script homepage: https://github.com/AntonShevchuk/wme-api-helper-ui/  
+GreasyFork: https://greasyfork.org/uk/scripts/389577-apihelperui/

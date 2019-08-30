@@ -11,7 +11,6 @@
 // @exclude      https://www.waze.com/user/editor*
 // @exclude      https://beta.waze.com/user/editor*
 // @grant        none
-// @require      https://greasyfork.org/scripts/24851-wazewrap/code/WazeWrap.js
 // @namespace    https://greasyfork.org/users/227648
 // ==/UserScript==
 
