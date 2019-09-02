@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         APIHelperUI
-// @version      0.2.0
+// @version      0.2.1
 // @description  API Helper UI
 // @author       Anton Shevchuk
 // @license      MIT License
@@ -25,6 +25,9 @@ class APIHelperUI {
   }
   createTab(title) {
     return new APIHelperUITab(this.uid, title);
+  }
+  createModal(title) {
+    return new APIHelperUIModal(this.uid, title);
   }
 }
 

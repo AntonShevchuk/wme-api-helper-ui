@@ -24,7 +24,7 @@ For initial helper use method `APIHelper.bootstrap()`:
 (function () {
   'use strict';
 
-  let helper, panel, tab;
+  let helper, panel, modal, tab;
 
   // uniq script name
   const NAME = 'Some Script';
@@ -103,22 +103,25 @@ For initial helper use method `APIHelper.bootstrap()`:
 
         helper = new APIHelperUI('Example Script');
 
-        panel = helper.createPanel(helper.t().title);
+        panel = helper.createPanel(I18n.t(NAME).title);
         panel.addButtons(buttons);
 
-        tab = helper.createTab(helper.t().title);
+        modal = helper.createModal(I18n.t(NAME).title);
+        modal.addButtons(buttons);
+
+        tab = helper.createTab(I18n.t(NAME).title);
         tab.addButtons(buttons);
         tab.init();
       })
-      .on('segment.apihelper', '#edit-panel', (e, el) => {
+      .on('segment.apihelper', (e, el) => {
         console.log('@segment', el);
         panel.init(el);
       })
-      .on('landmark.apihelper', '#edit-panel', (e, el) => {
+      .on('landmark.apihelper', (e, el) => {
         console.info('@landmark', el);
         panel.init(el);
       })
-      .on('landmark-collection.apihelper', '#edit-panel', (e, el) => {
+      .on('landmark-collection.apihelper', (e, el) => {
         console.info('@landmark-collection', el)
         panel.init(el);
       });
