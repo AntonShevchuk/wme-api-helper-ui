@@ -112,6 +112,43 @@ class APIHelperUIPanel extends APIHelperUIElement {
   }
 }
 
+class APIHelperUIModal extends APIHelperUIElement {
+  init() {
+    document.getElementById('panel-container').append(this.toHTML());
+  }
+  toHTML() {
+    // Header and close button
+    let close = document.createElement('a');
+    close.className = 'close-panel';
+
+    let header = document.createElement('div');
+    header.className = 'header';
+    header.innerHTML = this.title;
+    header.prepend(close);
+
+    // Body
+    let body = document.createElement('div');
+    body.className = 'body';
+
+    // Append buttons to panel
+    for (let btn in this.buttons) {
+      body.appendChild(this.buttons[btn].toHTML());
+    }
+
+    // Container
+    let archivePanel = document.createElement('div');
+    archivePanel.className = 'archive-panel';
+    archivePanel.append(header);
+    archivePanel.append(body);
+
+    let panel = document.createElement('div');
+    panel.className = 'panel show';
+    panel.append(archivePanel);
+
+    return panel;
+  }
+}
+
 class APIHelperUIButton {
   constructor(uid, id, title, description, shortcut, callback) {
     this.uid = uid;
