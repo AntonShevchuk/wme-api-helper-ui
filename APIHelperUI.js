@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         APIHelperUI
-// @version      0.3.0
+// @version      0.3.1
 // @description  API Helper UI
 // @author       Anton Shevchuk
 // @license      MIT License
@@ -249,14 +249,14 @@ class APIHelperUICheckbox extends APIHelperUIControl {
 class APIHelperUIButton extends APIHelperUIControl {
   constructor(uid, id, title, description, callback, shortcut = null) {
     super(uid, id, title, description, callback);
-    if (this.shortcut) {
+    if (shortcut) {
       /* name, desc, group, title, shortcut, callback, scope */
       new WazeWrap.Interface.Shortcut(
         this.uid + '-' + this.id,
         this.description,
         this.uid,
         this.uid,
-        this.shortcut,
+        shortcut,
         this.callback,
         null
       ).add();
