@@ -111,19 +111,19 @@ For initial helper use method `APIHelper.bootstrap()`:
 
         tab = helper.createTab(I18n.t(NAME).title);
         tab.addButtons(buttons);
-        tab.init();
+        tab.inject();
       })
       .on('segment.apihelper', (e, el) => {
         console.log('@segment', el);
-        panel.init(el);
+        el.append(panel.toHTML());
       })
       .on('landmark.apihelper', (e, el) => {
         console.info('@landmark', el);
-        panel.init(el);
+        el.append(panel.toHTML());
       })
       .on('landmark-collection.apihelper', (e, el) => {
         console.info('@landmark-collection', el)
-        panel.init(el);
+        el.append(panel.toHTML());
       });
 })();
 

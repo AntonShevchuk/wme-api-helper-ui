@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         APIHelperUI
-// @version      0.2.1
+// @version      0.3.0
 // @description  API Helper UI
 // @author       Anton Shevchuk
 // @license      MIT License
@@ -16,108 +16,123 @@
 
 /* jshint esversion: 6 */
 /* global require, window, $, W, I18n, WazeWrap */
+
 class APIHelperUI {
   constructor(uid) {
     this.uid = APIHelper.normalize(uid);
+    this.id = 0;
+  }
+  generateId() {
+    this.id++;
+    return this.uid + '-' + this.id;
   }
   createPanel(title) {
-    return new APIHelperUIPanel(this.uid, title);
+    return new APIHelperUIPanel(this.uid, this.generateId(), title);
   }
   createTab(title) {
-    return new APIHelperUITab(this.uid, title);
+    return new APIHelperUITab(this.uid, this.generateId(), title);
   }
   createModal(title) {
-    return new APIHelperUIModal(this.uid, title);
+    return new APIHelperUIModal(this.uid, this.generateId(), title);
+  }
+  createFieldset(title) {
+    return new APIHelperUIFieldset(this.uid, this.generateId(), title);
   }
 }
 
 class APIHelperUIElement {
-  constructor(uid, title) {
+  constructor(uid, id, title, description = null) {
     this.uid = uid;
+    this.id = id;
     this.title = title;
-    this.buttons = {};
+    this.description = description;
   }
-  addButton(id, title, description, shortcut, callback) {
-    this.buttons[id] = new APIHelperUIButton(this.uid, id, title, description, shortcut, callback);
+  toHTML() {
+    throw new Error('Abstract method');
+  }
+}
+
+class APIHelperUIContainer extends APIHelperUIElement {
+  constructor(uid, id, title, description = null) {
+    super(uid, id, title, description);
+    this.elements = {};
+  }
+  addElement(element) {
+    this.elements[element.id] = element;
+    return this.elements[element.id];
+  }
+  // For Tab Panel Modal
+  addFieldset(id, title, description) {
+    return this.addElement(new APIHelperUIFieldset(this.uid, id, title, description));
+
+  }
+  // For Tab Panel Modal Fieldset
+  addCheckbox(id, title, description, callback) {
+    return this.addElement(new APIHelperUICheckbox(this.uid, id, title, description, callback));
+  }
+  // For Tab Panel Modal Fieldset
+  addButton(id, title, description, callback, shortcut = null) {
+    return this.addElement(new APIHelperUIButton(this.uid, id, title, description, callback, shortcut));
   }
   addButtons(buttons) {
     for (let btn in buttons) {
       this.addButton(
-          btn,
-          buttons[btn].title,
-          buttons[btn].description,
-          buttons[btn].shortcut,
-          buttons[btn].callback,
+        btn,
+        buttons[btn].title,
+        buttons[btn].description,
+        buttons[btn].callback,
+        buttons[btn].shortcut,
       );
     }
   }
 }
 
-class APIHelperUITab extends APIHelperUIElement {
-  init() {
-    // Tab toggler
+class APIHelperUITab extends APIHelperUIContainer {
+  constructor(uid, id, title, description = null) {
+    super(uid, id, title, description);
+    // Create tab toggler
     let li = document.createElement('li');
-        li.innerHTML = '<a href="#sidepanel-' + this.uid + '" id="' + this.uid + '" data-toggle="tab">'+ this.title + '</a>';
-    document.querySelector('#user-tabs .nav-tabs').appendChild(li);
-    document.querySelector('.tab-content').appendChild(this.toHTML());
+    li.innerHTML = '<a href="#sidepanel-' + this.uid + '" id="' + this.uid + '" data-toggle="tab">'+ this.title + '</a>';
+    document.querySelector('#user-tabs .nav-tabs').append(li);
+  }
+  inject() {
+    this.container().append(this.toHTML());
+  }
+  container() {
+    return document.querySelector('.tab-content');
   }
   toHTML() {
     // Section
     let pane = document.createElement('div');
-        pane.id = 'sidepanel-' + this.uid;
-        pane.className = 'tab-pane';
+    pane.id = 'sidepanel-' + this.uid;
+    pane.className = 'tab-pane';
     // Label of the panel
     let label = document.createElement('label');
-        label.className = 'control-label';
-        label.innerHTML = this.title;
+    label.className = 'control-label';
+    label.innerHTML = this.title;
     // Container for buttons
     let controls = document.createElement('div');
-        controls.className = 'button-toolbar';
+    controls.className = 'button-toolbar';
     // Append buttons to container
-    for (let btn in this.buttons) {
-      let p = document.createElement('p');
-          p.innerHTML = this.buttons[btn].description;
-          p.prepend(this.buttons[btn].toHTML());
-      controls.appendChild(p);
+    for (let el in this.elements) {
+      controls.append(this.elements[el].toHTML());
     }
     // Build panel
     let group = document.createElement('div');
-        group.className = 'form-group ' + APIHelper.normalize(this.uid);
-        group.appendChild(label);
-        group.appendChild(controls);
+    group.className = 'form-group ' + APIHelper.normalize(this.uid);
+    group.append(label);
+    group.append(controls);
     pane.append(group);
     return pane;
   }
 }
 
-class APIHelperUIPanel extends APIHelperUIElement {
-  init(element) {
-    element.prepend(this.toHTML())
+class APIHelperUIModal extends APIHelperUIContainer {
+  inject() {
+    this.container().append(this.toHTML());
   }
-  toHTML() {
-    // Label of the panel
-    let label = document.createElement('label');
-        label.className = 'control-label';
-        label.innerHTML = this.title;
-    // Container for buttons
-    let controls = document.createElement('div');
-        controls.className = 'controls';
-    // Append buttons to panel
-    for (let btn in this.buttons) {
-      controls.appendChild(this.buttons[btn].toHTML());
-    }
-    // Build panel
-    let group = document.createElement('div');
-        group.className = 'form-group ' + APIHelper.normalize(this.uid);
-        group.appendChild(label);
-        group.appendChild(controls);
-    return group;
-  }
-}
-
-class APIHelperUIModal extends APIHelperUIElement {
-  init() {
-    document.getElementById('panel-container').append(this.toHTML());
+  container() {
+    return document.getElementById('panel-container');
   }
   toHTML() {
     // Header and close button
@@ -134,8 +149,8 @@ class APIHelperUIModal extends APIHelperUIElement {
     body.className = 'body';
 
     // Append buttons to panel
-    for (let btn in this.buttons) {
-      body.appendChild(this.buttons[btn].toHTML());
+    for (let el in this.elements) {
+      body.append(this.elements[el].toHTML());
     }
 
     // Container
@@ -152,21 +167,91 @@ class APIHelperUIModal extends APIHelperUIElement {
   }
 }
 
-class APIHelperUIButton {
-  constructor(uid, id, title, description, shortcut, callback) {
-    this.uid = uid;
-    this.id = id;
-    this.title = title;
-    this.description = description;
-    this.shortcut = shortcut;
-    this.callback = callback;
-    if (this.shortcut) {
-      this.addShortcut();
+class APIHelperUIPanel extends APIHelperUIContainer {
+  toHTML() {
+    // Label of the panel
+    let label = document.createElement('label');
+    label.className = 'control-label';
+    label.innerHTML = this.title;
+    // Container for buttons
+    let controls = document.createElement('div');
+    controls.className = 'controls';
+    // Append buttons to panel
+    for (let el in this.elements) {
+      controls.append(this.elements[el].toHTML());
     }
+    // Build panel
+    let group = document.createElement('div');
+    group.className = 'form-group ' + APIHelper.normalize(this.uid);
+    group.append(label);
+    group.append(controls);
+    return group;
   }
-  addShortcut() {
-    /* name, desc, group, title, shortcut, callback, scope */
-    new WazeWrap.Interface.Shortcut(
+}
+
+class APIHelperUIFieldset extends APIHelperUIContainer {
+  toHTML() {
+    let fieldset = document.createElement('fieldset');
+    fieldset.className = this.uid;
+
+    let legend = document.createElement('legend');
+    legend.innerHTML = this.title;
+
+    fieldset.append(legend);
+
+    if (this.description) {
+      let description = document.createElement('p');
+      description.innerHTML = this.description;
+      fieldset.append(description);
+    }
+    // Container for buttons
+    let controls = document.createElement('div');
+    controls.className = 'controls';
+    // Append buttons to panel
+    for (let el in this.elements) {
+      controls.append(this.elements[el].toHTML());
+    }
+    fieldset.append(controls);
+    return fieldset;
+  }
+}
+
+class APIHelperUIControl extends APIHelperUIElement {
+  constructor(uid, id, title, description, callback) {
+    super(uid, id, title, description);
+    this.callback = callback;
+  }
+}
+
+class APIHelperUICheckbox extends APIHelperUIControl {
+  toHTML() {
+    let id = this.uid + '_' + this.id;
+    let checkbox = document.createElement('input');
+    checkbox.id = '_' + id;
+    checkbox.type = 'checkbox';
+    checkbox.name = id;
+    checkbox.value = 1;
+    checkbox.onclick = this.callback;
+
+    let label = document.createElement('label');
+    label.htmlFor = '_' + id;
+    label.innerHTML = this.title;
+
+    let container = document.createElement('div');
+    container.title = this.description;
+    container.id = id;
+    container.className = 'controls-container ';
+    container.append(checkbox, label);
+    return container;
+  }
+}
+
+class APIHelperUIButton extends APIHelperUIControl {
+  constructor(uid, id, title, description, callback, shortcut = null) {
+    super(uid, id, title, description, callback);
+    if (this.shortcut) {
+      /* name, desc, group, title, shortcut, callback, scope */
+      new WazeWrap.Interface.Shortcut(
         this.uid + '-' + this.id,
         this.description,
         this.uid,
@@ -174,14 +259,15 @@ class APIHelperUIButton {
         this.shortcut,
         this.callback,
         null
-    ).add();
+      ).add();
+    }
   }
   toHTML() {
     let button = document.createElement('button');
-      button.className = 'waze-btn waze-btn-small ' + this.uid + ' ' + this.uid + '-' + this.id;
-      button.innerHTML = this.title;
-      button.title = this.description;
-      button.onclick = this.callback;
+    button.className = 'waze-btn waze-btn-small ' + this.uid + ' ' + this.uid + '-' + this.id;
+    button.innerHTML = this.title;
+    button.title = this.description;
+    button.onclick = this.callback;
     return button;
   }
 }
