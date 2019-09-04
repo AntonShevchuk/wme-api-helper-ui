@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         APIHelperUI
-// @version      0.3.1
+// @version      0.3.2
 // @description  API Helper UI
 // @author       Anton Shevchuk
 // @license      MIT License
@@ -217,9 +217,10 @@ class APIHelperUIFieldset extends APIHelperUIContainer {
 }
 
 class APIHelperUIControl extends APIHelperUIElement {
-  constructor(uid, id, title, description, callback) {
+  constructor(uid, id, title, description, callback, checked = false) {
     super(uid, id, title, description);
     this.callback = callback;
+    this.checked = checked;
   }
 }
 
@@ -231,6 +232,7 @@ class APIHelperUICheckbox extends APIHelperUIControl {
     checkbox.type = 'checkbox';
     checkbox.name = id;
     checkbox.value = 1;
+    checkbox.checked = this.checked;
     checkbox.onclick = this.callback;
 
     let label = document.createElement('label');
