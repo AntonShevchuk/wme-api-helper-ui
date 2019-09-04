@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         APIHelperUI
-// @version      0.3.2
+// @version      0.3.3
 // @description  API Helper UI
 // @author       Anton Shevchuk
 // @license      MIT License
@@ -67,8 +67,8 @@ class APIHelperUIContainer extends APIHelperUIElement {
 
   }
   // For Tab Panel Modal Fieldset
-  addCheckbox(id, title, description, callback) {
-    return this.addElement(new APIHelperUICheckbox(this.uid, id, title, description, callback));
+  addCheckbox(id, title, description, callback, checked = false) {
+    return this.addElement(new APIHelperUICheckbox(this.uid, id, title, description, callback, checked));
   }
   // For Tab Panel Modal Fieldset
   addButton(id, title, description, callback, shortcut = null) {
