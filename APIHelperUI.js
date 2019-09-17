@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         APIHelperUI
-// @version      0.3.4
+// @version      0.3.5
 // @description  API Helper UI
 // @author       Anton Shevchuk
 // @license      MIT License
@@ -231,6 +231,7 @@ class APIHelperUIFieldset extends APIHelperUIContainer {
 class APIHelperUIText extends APIHelperUIElement {
   toHTML() {
     let p = document.createElement('p');
+    p.className = this.uid + ' ' + this.uid + '-' + this.id;
     p.innerHTML = this.description;
     return p;
   }
