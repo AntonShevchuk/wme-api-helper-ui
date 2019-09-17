@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         APIHelperUI
-// @version      0.3.3
+// @version      0.3.4
 // @description  API Helper UI
 // @author       Anton Shevchuk
 // @license      MIT License
@@ -17,6 +17,9 @@
 /* jshint esversion: 6 */
 /* global require, window, $, W, I18n, WazeWrap */
 
+/**
+ * God class, create it once
+ */
 class APIHelperUI {
   constructor(uid) {
     this.uid = APIHelper.normalize(uid);
@@ -40,6 +43,9 @@ class APIHelperUI {
   }
 }
 
+/**
+ * Basic for all UI elements
+ */
 class APIHelperUIElement {
   constructor(uid, id, title, description = null) {
     this.uid = uid;
@@ -52,6 +58,9 @@ class APIHelperUIElement {
   }
 }
 
+/**
+ * Basic for all UI containers
+ */
 class APIHelperUIContainer extends APIHelperUIElement {
   constructor(uid, id, title, description = null) {
     super(uid, id, title, description);
@@ -61,10 +70,13 @@ class APIHelperUIContainer extends APIHelperUIElement {
     this.elements[element.id] = element;
     return this.elements[element.id];
   }
+  // For Tab Panel Modal Fieldset
+  addText(id, text) {
+    return this.addElement(new APIHelperUIText(this.uid, id, null, text));
+  }
   // For Tab Panel Modal
   addFieldset(id, title, description) {
     return this.addElement(new APIHelperUIFieldset(this.uid, id, title, description));
-
   }
   // For Tab Panel Modal Fieldset
   addCheckbox(id, title, description, callback, checked = false) {
@@ -213,6 +225,14 @@ class APIHelperUIFieldset extends APIHelperUIContainer {
     }
     fieldset.append(controls);
     return fieldset;
+  }
+}
+
+class APIHelperUIText extends APIHelperUIElement {
+  toHTML() {
+    let p = document.createElement('p');
+    p.innerHTML = this.description;
+    return p;
   }
 }
 
