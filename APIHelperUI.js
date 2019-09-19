@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         APIHelperUI
-// @version      0.3.5
+// @version      0.4.0
 // @description  API Helper UI
 // @author       Anton Shevchuk
 // @license      MIT License
@@ -52,6 +52,13 @@ class APIHelperUIElement {
     this.id = id;
     this.title = title;
     this.description = description;
+    this.domElement = null;
+  }
+  html() {
+    if (!this.domElement) {
+      this.domElement = this.toHTML();
+    }
+    return this.domElement;
   }
   toHTML() {
     throw new Error('Abstract method');
@@ -64,11 +71,10 @@ class APIHelperUIElement {
 class APIHelperUIContainer extends APIHelperUIElement {
   constructor(uid, id, title, description = null) {
     super(uid, id, title, description);
-    this.elements = {};
+    this.elements = [];
   }
   addElement(element) {
-    this.elements[element.id] = element;
-    return this.elements[element.id];
+    this.elements.push(element);
   }
   // For Tab Panel Modal Fieldset
   addText(id, text) {
@@ -80,7 +86,26 @@ class APIHelperUIContainer extends APIHelperUIElement {
   }
   // For Tab Panel Modal Fieldset
   addCheckbox(id, title, description, callback, checked = false) {
-    return this.addElement(new APIHelperUICheckbox(this.uid, id, title, description, callback, checked));
+    return this.addElement(
+      new APIHelperUIInput(this.uid, id, title, description, {
+        'id': this.uid + '_' + id,
+        'onclick': callback,
+        'type': 'checkbox',
+        'value': 1,
+        'checked': checked
+      })
+    );
+  }
+  addRadio(id, title, description, callback, value, checked = false) {
+    return this.addElement(
+      new APIHelperUIInput(this.uid, id, title, description, {
+        'id': this.uid + '_' + id + '_' + value,
+        'onclick': callback,
+        'type': 'radio',
+        'value': value,
+        'checked': checked
+      })
+    );
   }
   // For Tab Panel Modal Fieldset
   addButton(id, title, description, callback, shortcut = null) {
@@ -88,32 +113,31 @@ class APIHelperUIContainer extends APIHelperUIElement {
   }
   addButtons(buttons) {
     for (let btn in buttons) {
-      this.addButton(
-        btn,
-        buttons[btn].title,
-        buttons[btn].description,
-        buttons[btn].callback,
-        buttons[btn].shortcut,
-      );
+      if (buttons.hasOwnProperty(btn)) {
+        this.addButton(
+          btn,
+          buttons[btn].title,
+          buttons[btn].description,
+          buttons[btn].callback,
+          buttons[btn].shortcut,
+        );
+      }
     }
   }
 }
 
 class APIHelperUITab extends APIHelperUIContainer {
-  constructor(uid, id, title, description = null) {
-    super(uid, id, title, description);
-    // Create tab toggler
-    let li = document.createElement('li');
-    li.innerHTML = '<a href="#sidepanel-' + this.uid + '" id="' + this.uid + '" data-toggle="tab">'+ this.title + '</a>';
-    document.querySelector('#user-tabs .nav-tabs').append(li);
+  container() {
+    return document.querySelector('.tab-content');
   }
   inject() {
     this.container().append(this.toHTML());
   }
-  container() {
-    return document.querySelector('.tab-content');
-  }
   toHTML() {
+    // Create tab toggler
+    let li = document.createElement('li');
+    li.innerHTML = '<a href="#sidepanel-' + this.uid + '" id="' + this.uid + '" data-toggle="tab">'+ this.title + '</a>';
+    document.querySelector('#user-tabs .nav-tabs').append(li);
     // Section
     let pane = document.createElement('div');
     pane.id = 'sidepanel-' + this.uid;
@@ -126,9 +150,7 @@ class APIHelperUITab extends APIHelperUIContainer {
     let controls = document.createElement('div');
     controls.className = 'button-toolbar';
     // Append buttons to container
-    for (let el in this.elements) {
-      controls.append(this.elements[el].toHTML());
-    }
+    this.elements.forEach(element => controls.append(element.toHTML()));
     // Build panel
     let group = document.createElement('div');
     group.className = 'form-group ' + APIHelper.normalize(this.uid);
@@ -140,11 +162,11 @@ class APIHelperUITab extends APIHelperUIContainer {
 }
 
 class APIHelperUIModal extends APIHelperUIContainer {
-  inject() {
-    this.container().append(this.toHTML());
-  }
   container() {
     return document.getElementById('panel-container');
+  }
+  inject() {
+    this.container().append(this.toHTML());
   }
   toHTML() {
     // Header and close button
@@ -161,9 +183,7 @@ class APIHelperUIModal extends APIHelperUIContainer {
     body.className = 'body';
 
     // Append buttons to panel
-    for (let el in this.elements) {
-      body.append(this.elements[el].toHTML());
-    }
+    this.elements.forEach(element => body.append(element.toHTML()));
 
     // Container
     let archivePanel = document.createElement('div');
@@ -189,9 +209,7 @@ class APIHelperUIPanel extends APIHelperUIContainer {
     let controls = document.createElement('div');
     controls.className = 'controls';
     // Append buttons to panel
-    for (let el in this.elements) {
-      controls.append(this.elements[el].toHTML());
-    }
+    this.elements.forEach(element => controls.append(element.toHTML()));
     // Build panel
     let group = document.createElement('div');
     group.className = 'form-group ' + APIHelper.normalize(this.uid);
@@ -220,9 +238,7 @@ class APIHelperUIFieldset extends APIHelperUIContainer {
     let controls = document.createElement('div');
     controls.className = 'controls';
     // Append buttons to panel
-    for (let el in this.elements) {
-      controls.append(this.elements[el].toHTML());
-    }
+    this.elements.forEach(element => controls.append(element.toHTML()));
     fieldset.append(controls);
     return fieldset;
   }
@@ -238,33 +254,32 @@ class APIHelperUIText extends APIHelperUIElement {
 }
 
 class APIHelperUIControl extends APIHelperUIElement {
-  constructor(uid, id, title, description, callback, checked = false) {
+  constructor(uid, id, title, description, attributes = {}) {
     super(uid, id, title, description);
-    this.callback = callback;
-    this.checked = checked;
+    this.attributes = attributes;
+    this.attributes.name = this.id;
+  }
+  _prepare(dom) {
+    for (let attr in this.attributes) {
+      if (this.attributes.hasOwnProperty(attr)) {
+        dom[attr] = this.attributes[attr];
+      }
+    }
+    return dom;
   }
 }
 
-class APIHelperUICheckbox extends APIHelperUIControl {
+class APIHelperUIInput extends APIHelperUIControl {
   toHTML() {
-    let id = this.uid + '_' + this.id;
-    let checkbox = document.createElement('input');
-    checkbox.id = '_' + id;
-    checkbox.type = 'checkbox';
-    checkbox.name = id;
-    checkbox.value = 1;
-    checkbox.checked = this.checked;
-    checkbox.onclick = this.callback;
-
+    let input = this._prepare(document.createElement('input'));
     let label = document.createElement('label');
-    label.htmlFor = '_' + id;
+    label.htmlFor = input.id;
     label.innerHTML = this.title;
 
     let container = document.createElement('div');
     container.title = this.description;
-    container.id = id;
     container.className = 'controls-container ';
-    container.append(checkbox, label);
+    container.append(input, label);
     return container;
   }
 }
