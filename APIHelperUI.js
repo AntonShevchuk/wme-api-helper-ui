@@ -1,6 +1,7 @@
+
 // ==UserScript==
 // @name         APIHelperUI
-// @version      0.4.1
+// @version      0.4.2
 // @description  API Helper UI
 // @author       Anton Shevchuk
 // @license      MIT License
@@ -29,17 +30,17 @@ class APIHelperUI {
     this.index++;
     return this.uid + '-' + this.index;
   }
-  createPanel(title) {
-    return new APIHelperUIPanel(this.uid, this.generateId(), title);
+  createPanel(title, description = null) {
+    return new APIHelperUIPanel(this.uid, this.generateId(), title, description);
   }
-  createTab(title) {
-    return new APIHelperUITab(this.uid, this.generateId(), title);
+  createTab(title, description = null) {
+    return new APIHelperUITab(this.uid, this.generateId(), title, description);
   }
-  createModal(title) {
-    return new APIHelperUIModal(this.uid, this.generateId(), title);
+  createModal(title, description = null) {
+    return new APIHelperUIModal(this.uid, this.generateId(), title, description);
   }
-  createFieldset(title) {
-    return new APIHelperUIFieldset(this.uid, this.generateId(), title);
+  createFieldset(title, description = null) {
+    return new APIHelperUIFieldset(this.uid, this.generateId(), title, description);
   }
 }
 
@@ -76,6 +77,9 @@ class APIHelperUIContainer extends APIHelperUIElement {
   constructor(uid, id, title, description = null) {
     super(uid, id, title, description);
     this.elements = [];
+    if (description) {
+      this.addText('description', description);
+    }
   }
   addElement(element) {
     this.elements.push(element);
@@ -242,30 +246,19 @@ class APIHelperUIPanel extends APIHelperUIContainer {
 }
 
 class APIHelperUIFieldset extends APIHelperUIContainer {
-  constructor(uid, id, title, description = null) {
-    super(uid, id, title, description);
-    if (description) {
-      this.addText('description', description);
-    }
-  }
   toHTML() {
-    let fieldset = document.createElement('fieldset');
+    // Fieldset legend
     let legend = document.createElement('legend');
     legend.innerHTML = this.title;
 
-    fieldset.append(legend);
-
-    if (this.description) {
-      let description = document.createElement('p');
-      description.innerHTML = this.description;
-      fieldset.append(description);
-    }
     // Container for buttons
     let controls = document.createElement('div');
     controls.className = 'controls';
-    // Append buttons to panel
+    // Append buttons to container
     this.elements.forEach(element => controls.append(element.html()));
-    fieldset.append(controls);
+
+    let fieldset = document.createElement('fieldset');
+    fieldset.append(legend, controls);
     return fieldset;
   }
 }
