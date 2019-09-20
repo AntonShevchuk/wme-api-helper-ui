@@ -1,7 +1,7 @@
 
 // ==UserScript==
 // @name         APIHelperUI
-// @version      0.4.2
+// @version      0.4.3
 // @description  API Helper UI
 // @author       Anton Shevchuk
 // @license      MIT License
@@ -119,7 +119,7 @@ class APIHelperUIContainer extends APIHelperUIElement {
     return this.addElement(
       new APIHelperUIInput(this.uid, id, title, description, {
         'id': this.uid + '-' + id,
-        'onclick': callback,
+        'onchange': callback,
         'type': 'range',
         'min': min,
         'max': max,
