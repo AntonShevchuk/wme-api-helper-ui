@@ -23,11 +23,11 @@
 class APIHelperUI {
   constructor(uid) {
     this.uid = APIHelper.normalize(uid);
-    this.id = 0;
+    this.index = 0;
   }
   generateId() {
-    this.id++;
-    return this.uid + '-' + this.id;
+    this.index++;
+    return this.uid + '-' + this.index;
   }
   createPanel(title) {
     return new APIHelperUIPanel(this.uid, this.generateId(), title);
@@ -57,11 +57,15 @@ class APIHelperUIElement {
   html() {
     if (!this.domElement) {
       this.domElement = this.toHTML();
+      this.domElement.className +=  ' ' + this._className();
     }
     return this.domElement;
   }
   toHTML() {
     throw new Error('Abstract method');
+  }
+  _className() {
+    return this.uid + ' ' + this.uid + '-' + this.id;
   }
 }
 
@@ -88,22 +92,35 @@ class APIHelperUIContainer extends APIHelperUIElement {
   addCheckbox(id, title, description, callback, checked = false) {
     return this.addElement(
       new APIHelperUIInput(this.uid, id, title, description, {
-        'id': this.uid + '_' + id,
+        'id': this.uid + '-' + id,
         'onclick': callback,
         'type': 'checkbox',
         'value': 1,
-        'checked': checked
+        'checked': checked,
       })
     );
   }
   addRadio(id, title, description, callback, value, checked = false) {
     return this.addElement(
       new APIHelperUIInput(this.uid, id, title, description, {
-        'id': this.uid + '_' + id + '_' + value,
+        'id': this.uid + '-' + id + '-' + value,
         'onclick': callback,
         'type': 'radio',
         'value': value,
-        'checked': checked
+        'checked': checked,
+      })
+    );
+  }
+  addRange(id, title, description, callback, min, max, value, step = 10) {
+    return this.addElement(
+      new APIHelperUIInput(this.uid, id, title, description, {
+        'id': this.uid + '-' + id,
+        'onclick': callback,
+        'type': 'range',
+        'min': min,
+        'max': max,
+        'value': value,
+        'step': step,
       })
     );
   }
@@ -131,31 +148,36 @@ class APIHelperUITab extends APIHelperUIContainer {
     return document.querySelector('.tab-content');
   }
   inject() {
-    this.container().append(this.toHTML());
+    this.container().append(this.html());
   }
   toHTML() {
     // Create tab toggler
     let li = document.createElement('li');
     li.innerHTML = '<a href="#sidepanel-' + this.uid + '" id="' + this.uid + '" data-toggle="tab">'+ this.title + '</a>';
     document.querySelector('#user-tabs .nav-tabs').append(li);
-    // Section
-    let pane = document.createElement('div');
-    pane.id = 'sidepanel-' + this.uid;
-    pane.className = 'tab-pane';
+
     // Label of the panel
     let label = document.createElement('label');
     label.className = 'control-label';
     label.innerHTML = this.title;
+
     // Container for buttons
     let controls = document.createElement('div');
     controls.className = 'button-toolbar';
+
     // Append buttons to container
-    this.elements.forEach(element => controls.append(element.toHTML()));
-    // Build panel
+    this.elements.forEach(element => controls.append(element.html()));
+
+    // Build form group
     let group = document.createElement('div');
-    group.className = 'form-group ' + APIHelper.normalize(this.uid);
+    group.className = 'form-group';
     group.append(label);
     group.append(controls);
+
+    // Section
+    let pane = document.createElement('div');
+    pane.id = 'sidepanel-' + this.uid; // required by tab toggle, see above
+    pane.className = 'tab-pane';
     pane.append(group);
     return pane;
   }
@@ -166,7 +188,7 @@ class APIHelperUIModal extends APIHelperUIContainer {
     return document.getElementById('panel-container');
   }
   inject() {
-    this.container().append(this.toHTML());
+    this.container().append(this.html());
   }
   toHTML() {
     // Header and close button
@@ -183,7 +205,7 @@ class APIHelperUIModal extends APIHelperUIContainer {
     body.className = 'body';
 
     // Append buttons to panel
-    this.elements.forEach(element => body.append(element.toHTML()));
+    this.elements.forEach(element => body.append(element.html()));
 
     // Container
     let archivePanel = document.createElement('div');
@@ -209,10 +231,10 @@ class APIHelperUIPanel extends APIHelperUIContainer {
     let controls = document.createElement('div');
     controls.className = 'controls';
     // Append buttons to panel
-    this.elements.forEach(element => controls.append(element.toHTML()));
+    this.elements.forEach(element => controls.append(element.html()));
     // Build panel
     let group = document.createElement('div');
-    group.className = 'form-group ' + APIHelper.normalize(this.uid);
+    group.className = 'form-group';
     group.append(label);
     group.append(controls);
     return group;
@@ -222,8 +244,6 @@ class APIHelperUIPanel extends APIHelperUIContainer {
 class APIHelperUIFieldset extends APIHelperUIContainer {
   toHTML() {
     let fieldset = document.createElement('fieldset');
-    fieldset.className = this.uid;
-
     let legend = document.createElement('legend');
     legend.innerHTML = this.title;
 
@@ -238,7 +258,7 @@ class APIHelperUIFieldset extends APIHelperUIContainer {
     let controls = document.createElement('div');
     controls.className = 'controls';
     // Append buttons to panel
-    this.elements.forEach(element => controls.append(element.toHTML()));
+    this.elements.forEach(element => controls.append(element.html()));
     fieldset.append(controls);
     return fieldset;
   }
@@ -247,7 +267,6 @@ class APIHelperUIFieldset extends APIHelperUIContainer {
 class APIHelperUIText extends APIHelperUIElement {
   toHTML() {
     let p = document.createElement('p');
-    p.className = this.uid + ' ' + this.uid + '-' + this.id;
     p.innerHTML = this.description;
     return p;
   }
@@ -278,15 +297,16 @@ class APIHelperUIInput extends APIHelperUIControl {
 
     let container = document.createElement('div');
     container.title = this.description;
-    container.className = 'controls-container ';
+    container.className = 'controls-container';
     container.append(input, label);
     return container;
   }
 }
 
-class APIHelperUIButton extends APIHelperUIControl {
+class APIHelperUIButton extends APIHelperUIElement {
   constructor(uid, id, title, description, callback, shortcut = null) {
-    super(uid, id, title, description, callback);
+    super(uid, id, title, description);
+    this.callback = callback;
     if (shortcut) {
       /* name, desc, group, title, shortcut, callback, scope */
       new WazeWrap.Interface.Shortcut(
@@ -302,7 +322,7 @@ class APIHelperUIButton extends APIHelperUIControl {
   }
   toHTML() {
     let button = document.createElement('button');
-    button.className = 'waze-btn waze-btn-small ' + this.uid + ' ' + this.uid + '-' + this.id;
+    button.className = 'waze-btn waze-btn-small';
     button.innerHTML = this.title;
     button.title = this.description;
     button.onclick = this.callback;
