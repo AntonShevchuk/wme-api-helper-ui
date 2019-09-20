@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         APIHelperUI
-// @version      0.4.0
+// @version      0.4.1
 // @description  API Helper UI
 // @author       Anton Shevchuk
 // @license      MIT License
@@ -242,6 +242,12 @@ class APIHelperUIPanel extends APIHelperUIContainer {
 }
 
 class APIHelperUIFieldset extends APIHelperUIContainer {
+  constructor(uid, id, title, description = null) {
+    super(uid, id, title, description);
+    if (description) {
+      this.addText('description', description);
+    }
+  }
   toHTML() {
     let fieldset = document.createElement('fieldset');
     let legend = document.createElement('legend');
