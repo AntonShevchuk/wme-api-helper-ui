@@ -321,7 +321,7 @@ class APIHelperUIButton extends APIHelperUIElement {
   }
   toHTML() {
     let button = document.createElement('button');
-    button.className = 'waze-btn waze-btn-small';
+    button.className = 'waze-btn waze-btn-small waze-btn-white';
     button.innerHTML = this.title;
     button.title = this.description;
     button.onclick = this.callback;
