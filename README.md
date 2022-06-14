@@ -1,7 +1,6 @@
 # WME API Helper UI
 ## Require Script
 ```javascript
-// @require https://greasyfork.org/scripts/24851-wazewrap/code/WazeWrap.js
 // @require https://greasyfork.org/scripts/389117-apihelper/code/APIHelper.js?version=729351
 // @require https://greasyfork.org/scripts/389577-apihelperui/code/APIHelperUI.js?version=729353
 ```
