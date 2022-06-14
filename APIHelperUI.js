@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         APIHelperUI
-// @version      0.4.4
+// @version      0.4.5
 // @description  API Helper UI
 // @author       Anton Shevchuk
 // @license      MIT License
@@ -15,7 +15,7 @@
 // ==/UserScript==
 
 /* jshint esversion: 6 */
-/* global require, window, $, W, I18n, WazeWrap */
+/* global require, window, $, W, I18n */
 
 /**
  * God class, create it once
@@ -40,6 +40,160 @@ class APIHelperUI {
   }
   createFieldset(title, description = null) {
     return new APIHelperUIFieldset(this.uid, this.generateId(), title, description);
+  }
+}
+
+/**
+ * Sorry, I copied this class from WazeWrap as is
+ */
+class APIHelperUIShortcut {
+  constructor(name, desc, group, title, shortcut, callback, scope) {
+    if ('string' === typeof name && name.length > 0 && 'string' === typeof shortcut && 'function' === typeof callback) {
+      this.name = name;
+      this.desc = desc;
+      this.group = group || this.defaults.group;
+      this.title = title;
+      this.callback = callback;
+      this.shortcut = {};
+      if (shortcut.length > 0)
+        this.shortcut[shortcut] = name;
+      if ('object' !== typeof scope)
+        this.scope = null;
+      else
+        this.scope = scope;
+      this.groupExists = false;
+      this.actionExists = false;
+      this.eventExists = false;
+      this.defaults = { group: 'default' };
+
+      return this;
+    }
+  }
+
+  /**
+   * Determines if the shortcut's action already exists.
+   * @private
+   */
+  doesGroupExist() {
+    this.groupExists = 'undefined' !== typeof W.accelerators.Groups[this.group] &&
+      undefined !== typeof W.accelerators.Groups[this.group].members;
+    return this.groupExists;
+  }
+
+  /**
+   * Determines if the shortcut's action already exists.
+   * @private
+   */
+  doesActionExist() {
+    this.actionExists = 'undefined' !== typeof W.accelerators.Actions[this.name];
+    return this.actionExists;
+  }
+
+  /**
+   * Determines if the shortcut's event already exists.
+   * @private
+   */
+  doesEventExist() {
+    this.eventExists = 'undefined' !== typeof W.accelerators.events.dispatcher._events[this.name] &&
+      W.accelerators.events.dispatcher._events[this.name].length > 0 &&
+      this.callback === W.accelerators.events.dispatcher._events[this.name][0].func &&
+      this.scope === W.accelerators.events.dispatcher._events[this.name][0].obj;
+    return this.eventExists;
+  }
+
+  /**
+   * Creates the shortcut's group.
+   * @private
+   */
+  createGroup() {
+    W.accelerators.Groups[this.group] = [];
+    W.accelerators.Groups[this.group].members = [];
+
+    if (this.title && !I18n.translations[I18n.currentLocale()].keyboard_shortcuts.groups[this.group]) {
+      I18n.translations[I18n.currentLocale()].keyboard_shortcuts.groups[this.group] = [];
+      I18n.translations[I18n.currentLocale()].keyboard_shortcuts.groups[this.group].description = this.title;
+      I18n.translations[I18n.currentLocale()].keyboard_shortcuts.groups[this.group].members = [];
+    }
+  }
+
+  /**
+   * Registers the shortcut's action.
+   * @private
+   */
+  addAction() {
+    if (this.title)
+      I18n.translations[I18n.currentLocale()].keyboard_shortcuts.groups[this.group].members[this.name] = this.desc;
+    W.accelerators.addAction(this.name, { group: this.group });
+  }
+
+  /**
+   * Registers the shortcut's event.
+   * @private
+   */
+  addEvent() {
+    W.accelerators.events.register(this.name, this.scope, this.callback);
+  }
+
+  /**
+   * Registers the shortcut's keyboard shortcut.
+   * @private
+   */
+  registerShortcut() {
+    W.accelerators._registerShortcuts(this.shortcut);
+  }
+
+  /**
+   * Adds the keyboard shortcut to the map.
+   * @return {APIHelperUIShortcut} The keyboard shortcut.
+   */
+  add() {
+    /* If the group is not already defined, initialize the group. */
+    if (!this.doesGroupExist()) {
+      this.createGroup();
+    }
+
+    /* Clear existing actions with same name */
+    if (this.doesActionExist()) {
+      W.accelerators.Actions[this.name] = null;
+    }
+    this.addAction();
+
+    /* Register event only if it's not already registered */
+    if (!this.doesEventExist()) {
+      this.addEvent();
+    }
+
+    /* Finally, register the shortcut. */
+    this.registerShortcut();
+    return this;
+  }
+
+  /**
+   * Removes the keyboard shortcut from the map.
+   * @return {APIHelperUIShortcut} The keyboard shortcut.
+   */
+  remove() {
+    if (this.doesEventExist()) {
+      W.accelerators.events.unregister(this.name, this.scope, this.callback);
+    }
+    if (this.doesActionExist()) {
+      delete W.accelerators.Actions[this.name];
+    }
+    //remove shortcut?
+    return this;
+  }
+
+  /**
+   * Changes the keyboard shortcut and applies changes to the map.
+   * @return {APIHelperUIShortcut} The keyboard shortcut.
+   */
+  change(shortcut) {
+    if (shortcut) {
+      this.shortcut = {};
+      this.shortcut[shortcut] = this.name;
+      this.registerShortcut();
+    }
+    return this;
   }
 }
 
@@ -307,7 +461,7 @@ class APIHelperUIButton extends APIHelperUIElement {
     this.callback = callback;
     if (shortcut) {
       /* name, desc, group, title, shortcut, callback, scope */
-      new WazeWrap.Interface.Shortcut(
+      new APIHelperUIShortcut(
         this.uid + '-' + this.id,
         this.description,
         this.uid,
