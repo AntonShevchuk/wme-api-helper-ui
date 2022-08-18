@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         APIHelperUI
-// @version      0.4.5
+// @version      0.4.6
 // @description  API Helper UI
 // @author       Anton Shevchuk
 // @license      MIT License
@@ -314,9 +314,12 @@ class APIHelperUITab extends APIHelperUIContainer {
     document.querySelector('#user-tabs .nav-tabs').append(li);
 
     // Label of the panel
-    let label = document.createElement('label');
-    label.className = 'control-label';
-    label.innerHTML = this.title;
+    let header = document.createElement('div');
+    header.className = 'panel-header-component settings-header';
+    header.innerHTML = `<div class="panel-header-component-main">
+<i class="w-icon panel-header-component-icon w-icon-code"></i>
+<div class="feature-id-container"><wz-overline>`+ this.title +`</wz-overline></div>
+</div>`;
 
     // Container for buttons
     let controls = document.createElement('div');
@@ -328,7 +331,7 @@ class APIHelperUITab extends APIHelperUIContainer {
     // Build form group
     let group = document.createElement('div');
     group.className = 'form-group';
-    group.append(label);
+    group.append(header);
     group.append(controls);
 
     // Section
@@ -351,6 +354,9 @@ class APIHelperUIModal extends APIHelperUIContainer {
     // Header and close button
     let close = document.createElement('a');
     close.className = 'close-panel';
+    close.onclick = function() {
+      panel.remove();
+    };
 
     let header = document.createElement('div');
     header.className = 'header';
